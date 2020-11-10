@@ -342,13 +342,22 @@ def search_artists():
     )
 
 
-@app.route("/artists/<int:artist_id>")
+@app.route("/artists/<artist_id>")
 def show_artist(artist_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
-    data = Artist.query.get(artist_id)
+    artists = Artist.query.all()
+    selected_artist = Artist.query.get(artist_id)
+    show_artist = Show.query.filter_by(artist_id=artist_id).order_by("id").all()
 
-    return render_template("pages/show_artist.html", artists=data)
+    # data = Artist.query.get(artist_id)
+
+    return render_template(
+        "pages/show_artist.html",
+        artists=artists,
+        selected_artist=selected_artist,
+        show_artist=show_artist,
+    )
 
 
 #  Update
