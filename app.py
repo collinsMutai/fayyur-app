@@ -58,32 +58,24 @@ migrate = Migrate(app, db)
 #         "start_time": "2035-04-15T20:00:00.000Z",
 
 
-class Show(db.Model):
-    __tablename__ = "Shows"
-
-    id = db.Column(db.Integer, primary_key=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey("Artist.id"))
-    venue_id = db.Column(db.Integer, db.ForeignKey("Venue.id"))
-    start_time = db.Column(db.DateTime())
-    venue = db.relationship(
-        "Venue", backref=db.backref("Shows", cascade="all, delete-orphan")
-    )
-    artist = db.relationship(
-        "Artist", backref=db.backref("Shows", cascade="all, delete-orphan")
-    )
-
-
 class Venue(db.Model):
     __tablename__ = "Venue"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
+    genres = db.Column(db.String(120))
+    address = db.Column(db.String(120))
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
+    website = db.Column(db.String(120))
     facebook_link = db.Column(db.String(120))
+    seeking_talent = db.Column(db.String(120))
+    seeking_description = db.Column(db.String(120))
+    image_link = db.Column(db.String(500))
+    shows = db.relationship(
+        "Show", backref="Venue", lazy=True, cascade="all, delete-orphan"
+    )
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -93,12 +85,30 @@ class Artist(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
+    genres = db.Column(db.String(120))
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
+    website = db.Column(db.String(120))
     facebook_link = db.Column(db.String(120))
+    seeking_venue = db.Column(db.String(120))
+    seeking_description = db.Column(db.String(120))
+    image_link = db.Column(db.String(500))
+    shows = db.relationship(
+        "Show", backref="Artist", lazy=True, cascade="all, delete-orphan"
+    )
+
+
+class Show(db.Model):
+    __tablename__ = "Show"
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey("Venue.id"), nullable=False)
+    venue_name = db.Column(db.String(120))
+    artist_id = db.Column(db.Integer, db.ForeignKey("Artist.id"), nullable=False)
+    artist_name = db.Column(db.String(120))
+    artist_image_link = db.Column(db.String(120))
+    start_time = db.Column(db.DateTime())
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -172,15 +182,24 @@ def search_venues():
     )
 
 
-@app.route("/venues/<int:venue_id>")
+@app.route("/venues/<venue_id>")
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
 
-    showVenue = Show.query.get(venue_id).all()
+    #     todo = SELECT (artist_id, venue_id, start_time, name, city, state, address, phone) FROM "Venue" CROSS
+    #  JOIN "Shows";
 
-    # data = list(filter(lambda d: d["id"] == venue_id, [data1, data2, data3]))[0]
-    return render_template("pages/show_venue.html", venues=showVenue)
+    # venues = Venue.query.all()
+    # selected_venue = Venue.query.get(venue_id)
+    # show_venue = Show.query.filter_by(venue_id=venue_id).order_by("id").all()
+
+    return render_template(
+        "pages/show_venue.html",
+        venues=todo,
+        # selected_venue=selected_venue,
+        # show_venue=show_venue,
+    )
 
 
 #  Create Venue
@@ -205,7 +224,7 @@ def create_venue_submission():
         state = request.form.get("state")
         address = request.form.get("address")
         phone = request.form.get("phone")
-        # genres = request.form.get("genres")
+        genres = request.form.get("genres")
         facebook_link = request.form.get("facebook_link")
         newVenue = Venue(
             name=name,
@@ -213,7 +232,7 @@ def create_venue_submission():
             state=state,
             address=address,
             phone=phone,
-            # genres=genres,
+            genres=genres,
             facebook_link=facebook_link,
         )
         db.session.add(newVenue)
@@ -346,17 +365,21 @@ def search_artists():
 def show_artist(artist_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
-    artists = Artist.query.all()
-    selected_artist = Artist.query.get(artist_id)
-    show_artist = Show.query.filter_by(artist_id=artist_id).order_by("id").all()
+    artist = Artist.query.filter_by(id=artist_id).first()
+    shows = Show.query.filter_by(artist_id=artist_id).all()
 
-    # data = Artist.query.get(artist_id)
+    # artists = Artist.query.all()
+
+    # selected_artist = Artist.query.get(artist_id)
+
+    # show_artist = Show.query.filter_by(id=artist_id)
 
     return render_template(
         "pages/show_artist.html",
-        artists=artists,
-        selected_artist=selected_artist,
-        show_artist=show_artist,
+        artists=artist,
+        shows=shows,
+        # selected_artist=selected_artist,
+        # show_artist=show_artist,
     )
 
 
