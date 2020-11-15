@@ -49,15 +49,6 @@ migrate = Migrate(app, db)
 # ----------------------------------------------------------------------------#
 
 
-# connects artists and venues
-#  "venue_id": 3,
-#         "venue_name": "Park Square Live Music & Coffee",
-#         "artist_id": 6,
-#         "artist_name": "The Wild Sax Band",
-#         "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-#         "start_time": "2035-04-15T20:00:00.000Z",
-
-
 class Venue(db.Model):
     __tablename__ = "Venue"
 
@@ -146,24 +137,20 @@ def index():
 #  ----------------------------------------------------------------
 
 
+#  Get Venues
+#  ----------------------------------------------------------------
+
+
 @app.route("/venues", methods=["GET"])
 def venues():
     # TODO: show list of venues.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
 
-    data = []
-
-    venues = db.session.query(Venue.city, Venue.state).distinct(Venue.city, Venue.state)
-
-    for venue in venues:
-        venues_in_city = (
-            db.session.query(Venue.id, Venue.name)
-            .filter(Venue.city == venue[0])
-            .filter(Venue.state == venue[0])
-        )
-    data.append({"city": venue[0], "state": venue[0], "venues": venues_in_city})
     data = Venue.query.order_by("state").all()
     return render_template("pages/venues.html", areas=data)
+
+
+#  Search Venues
+#  ----------------------------------------------------------------
 
 
 @app.route("/venues/search", methods=["POST"])
@@ -182,27 +169,22 @@ def search_venues():
     )
 
 
+# Get venue page with venue_id
+#  ----------------------------------------------------------------
+
+
 @app.route("/venues/<venue_id>")
 def show_venue(venue_id):
-    # shows the venue page with the given venue_id
+
     # TODO: replace with real venue data from the venues table, using venue_id
 
-    #     todo = SELECT (artist_id, venue_id, start_time, name, city, state, address, phone) FROM "Venue" CROSS
-    #  JOIN "Shows";
-
-    # venues = Venue.query.all()
-    # selected_venue = Venue.query.get(venue_id)
-    # show_venue = Show.query.filter_by(venue_id=venue_id).order_by("id").all()
-
-    return render_template(
-        "pages/show_venue.html",
-        venues=todo,
-        # selected_venue=selected_venue,
-        # show_venue=show_venue,
-    )
+    #
+    venues = Venue.query.filter_by(id=venue_id).all()
+    shows = Show.query.filter_by(venue_id=venue_id).all()
+    return render_template("pages/show_venue.html", venues=venues, shows=shows)
 
 
-#  Create Venue
+#  Call Venue form
 #  ----------------------------------------------------------------
 
 
@@ -210,6 +192,10 @@ def show_venue(venue_id):
 def create_venue_form():
     form = VenueForm()
     return render_template("forms/new_venue.html", form=form)
+
+
+#  Create Venue
+#  ----------------------------------------------------------------
 
 
 @app.route("/venues/create", methods=["POST"])
@@ -257,6 +243,10 @@ def create_venue_submission():
     return render_template("pages/home.html")
 
 
+#  Delete Venue with venue id
+#  ----------------------------------------------------------------
+
+
 @app.route("/venues/<venue_id>", methods=["POST"])
 def delete_venue(venue_id):
     # TODO: Complete this endpoint for taking a venue_id, and using
@@ -291,17 +281,27 @@ def delete_venue(venue_id):
 
 #  Artists
 #  ----------------------------------------------------------------
-@app.route("/artists", methods=["GET"])
-def get_artists():
-
-    data = Artist.query.order_by("id").all()
-    return render_template("pages/artists.html", artists=data)
 
 
-@app.route("/artists", methods=["POST"])
-def artists():
-    # TODO: add new artist
+#  Call Artist form
+#  ----------------------------------------------------------------
 
+
+@app.route("/artists/create", methods=["GET"])
+def create_artist_form():
+    form = ArtistForm()
+    return render_template("forms/new_artist.html", form=form)
+
+
+#  Create Artist
+#  ----------------------------------------------------------------
+
+
+@app.route("/artists/create", methods=["POST"])
+def create_artist_submission():
+    # called upon submitting the new artist listing form
+    # TODO: insert form data as a new Venue record in the db, instead
+    # TODO: modify data to be the data object returned from db insertion
     error = False
     try:
         name = request.form.get("name")
@@ -335,8 +335,29 @@ def artists():
         )
     else:
         flash("Artist " + request.form["name"] + " was successfully listed!")
-
+    # on successful db insert, flash success
+    # flash("Artist " + request.form["name"] + " was successfully listed!")
+    # TODO: on unsuccessful db insert, flash an error instead.
+    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
     return render_template("pages/home.html")
+
+
+#  Get Artists
+#  ----------------------------------------------------------------
+
+
+@app.route("/artists", methods=["GET"])
+def artists():
+    # TODO: replace with real data returned from querying the database
+    data = Artist.query.order_by("id").all()
+    return render_template("pages/artists.html", artists=data)
+
+
+# @app.route("/artists", methods=["POST"])
+# def artists():
+#     # TODO: add new artist
+
+#     return render_template("pages/home.html")
 
 
 @app.route("/artists/search", methods=["POST"])
@@ -365,22 +386,10 @@ def search_artists():
 def show_artist(artist_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
-    artist = Artist.query.filter_by(id=artist_id).first()
+
+    artists = Artist.query.filter_by(id=artist_id).all()
     shows = Show.query.filter_by(artist_id=artist_id).all()
-
-    # artists = Artist.query.all()
-
-    # selected_artist = Artist.query.get(artist_id)
-
-    # show_artist = Show.query.filter_by(id=artist_id)
-
-    return render_template(
-        "pages/show_artist.html",
-        artists=artist,
-        shows=shows,
-        # selected_artist=selected_artist,
-        # show_artist=show_artist,
-    )
+    return render_template("pages/show_artist.html", artists=artists, shows=shows)
 
 
 #  Update
@@ -439,29 +448,6 @@ def edit_venue_submission(venue_id):
     # TODO: take values from the form submitted, and update existing
     # venue record with ID <venue_id> using the new attributes
     return redirect(url_for("show_venue", venue_id=venue_id))
-
-
-#  Create Artist
-#  ----------------------------------------------------------------
-
-
-@app.route("/artists/create", methods=["GET"])
-def create_artist_form():
-    form = ArtistForm()
-    return render_template("forms/new_artist.html", form=form)
-
-
-@app.route("/artists/create", methods=["POST"])
-def create_artist_submission():
-    # called upon submitting the new artist listing form
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
-
-    # on successful db insert, flash success
-    flash("Artist " + request.form["name"] + " was successfully listed!")
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-    return render_template("pages/home.html")
 
 
 #  Shows
