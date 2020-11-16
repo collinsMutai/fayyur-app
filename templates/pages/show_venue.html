@@ -1,7 +1,7 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Venue Search{% endblock %}
 {% block content %}
-{% for venue in venues %}
+
 <div class="row">
 	<div class="col-sm-6">
 		<h1 class="monospace">
@@ -48,9 +48,9 @@
 	</div>
 </div>
 <section>
-	<h2 class="monospace">{{ venue.venue_id }} Upcoming {% if venue.venue_id == 1 %}Show{% else %}Shows{% endif %}</h2>
+	<h2 class="monospace">{{ venue.upcoming_shows_count }} Upcoming {% if venue.upcoming_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
 	<div class="row">
-		{%for show in shows %}
+		{%for show in venue.upcoming_shows %}
 		<div class="col-sm-4">
 			<div class="tile tile-show">
 				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
@@ -75,6 +75,6 @@
 		{% endfor %}
 	</div>
 </section>
-{% endfor %}
+
 {% endblock %}
 
