@@ -427,31 +427,21 @@ def show_artist(artist_id):
     return render_template("pages/show_artist.html", artist=data)
 
 
-#  Update
+#  Load artist form
 #  ----------------------------------------------------------------
+
+
 @app.route("/artists/<artist_id>/edit", methods=["GET"])
 def edit_artist(artist_id):
-
-    form = ArtistForm(request.form)
-    artist = {
-        "id": artist.id,
-        "name": artist.name,
-        "genres": artist.genres,
-        "city": artist.city,
-        "state": artist.state,
-        "phone": artist.phone,
-        "website": artist.website,
-        "facebook_link": artist.facebook_link,
-        "seeking_venue": artist.seeking_venue,
-        "seeking_description": artist.seeking_description,
-        "image_link": artist.image_link,
-    # }
+    artist = Artist.query.first_or_404(artist_id)
+    form = ArtistForm(obj=artist)
 
     # TODO: populate form with fields from artist with ID <artist_id>
-    return render_template(
-        "forms/edit_artist.html",
-        form=form,
-    )
+    return render_template("forms/edit_artist.html", form=form, artist=artist)
+
+
+#  Update artist with artist_id
+#  ----------------------------------------------------------------
 
 
 @app.route("/artists/<artist_id>/edit", methods=["POST"])
@@ -459,55 +449,65 @@ def edit_artist_submission(artist_id):
     # TODO: take values from the form submitted, and update existing
     # artist record with ID <artist_id> using the new attributes
     form = ArtistForm(request.form)
+
     try:
-        artist = Artist()
+        artist = Artist.query.first_or_404(artist_id)
         form.populate_obj(artist)
-        db.session.add(artist)
         db.session.commit()
-        flash("Artist " + request.form["name"] + " was successfully listed!")
+        flash(f"Venue {form.name.data} was successfully edited!")
+
     except ValueError as e:
-        print(e)
-        flash(
-            "An error occurred. Artist "
-            + request.form["name"]
-            + " could not be listed."
-        )
         db.session.rollback()
+        flash(f"An error occurred in {form.name.data}. Error: {str(e)}")
+
     finally:
         db.session.close()
 
-    return redirect(url_for("show_artist", artist=artist, artist_id=artist_id))
+    return redirect(url_for("show_artist", artist_id=artist_id))
+
+
+#  Load venue form
+#  ----------------------------------------------------------------
 
 
 @app.route("/venues/<venue_id>/edit", methods=["GET"])
 def edit_venue(venue_id):
-    form = VenueForm()
-    venue = {
-        "id": 1,
-        "name": "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address": "1015 Folsom Street",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "123-123-1234",
-        "website": "https://www.themusicalhop.com",
-        "facebook_link": "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent": True,
-        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-    }
+
+    venue = Venue.query.first_or_404(venue_id)
+    form = VenueForm(obj=venue)
+
     # TODO: populate form with values from venue with ID <venue_id>
     return render_template("forms/edit_venue.html", form=form, venue=venue)
+
+
+#  Update venue with venue_id
+#  ----------------------------------------------------------------
 
 
 @app.route("/venues/<venue_id>/edit", methods=["POST"])
 def edit_venue_submission(venue_id):
     # TODO: take values from the form submitted, and update existing
     # venue record with ID <venue_id> using the new attributes
+
+    form = VenueForm(request.form)
+
+    try:
+        venue = Venue.query.first_or_404(venue_id)
+        form.populate_obj(venue)
+        db.session.commit()
+        flash(f"Venue {form.name.data} was successfully edited!")
+
+    except ValueError as e:
+        db.session.rollback()
+        flash(f"An error occurred in {form.name.data}. Error: {str(e)}")
+
+    finally:
+        db.session.close()
+
     return redirect(url_for("show_venue", venue_id=venue_id))
 
 
-#  Shows
+#  Get Shows
 #  ----------------------------------------------------------------
 
 
@@ -522,11 +522,19 @@ def shows():
     return render_template("pages/shows.html", shows=data)
 
 
+#  Load Show form
+#  ----------------------------------------------------------------
+
+
 @app.route("/shows/create")
 def create_shows():
     # renders form. do not touch.
     form = ShowForm()
     return render_template("forms/new_show.html", form=form)
+
+
+#  Create Shows
+#  ----------------------------------------------------------------
 
 
 @app.route("/shows/create", methods=["POST"])
